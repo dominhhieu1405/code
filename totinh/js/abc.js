@@ -24,7 +24,7 @@ shows.innerHTML=x;
 }
 
 if (document.f1.giaodien.value == "giaodien5") {
-var x = "<img src='https://dominhhieu1405.github.io/code/totinh/img/type5.PNG' width='350' height='200'>";
+var x = "<img src='https://dominhhieu1405.github.io/code/totinh/img/type5.png' width='350' height='200'>";
 shows.innerHTML=x;
 }
 if (document.f1.giaodien.value == "giaodien6") {
