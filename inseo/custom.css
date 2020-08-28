@@ -13,7 +13,7 @@
 
 /*end*/
 
-/* Simple table Css */
+/* Simple table Css 
 table.app {
   border-collapse: collapse;
   width: 100%;
@@ -25,4 +25,4 @@ th.name, td.des {
 }
 ​
 tr:nth-child(even) {background-color: #f2f2f2;}
-/* END */
+  END */
