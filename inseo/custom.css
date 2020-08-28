@@ -53,4 +53,22 @@ table.columns-3 td.columns-cell{width:33.33%}
 table.columns-4 td.columns-cell{width:25%}
 table.section-columns td.columns-cell{vertical-align:top}
 table.tr-caption-container{padding:4px;margin-bottom:.5em}
+/* END */
+
+/* Button "Move to Download button" */
+button.btn-to-down {
+  background-color: DodgerBlue;
+  border: none;
+  color: white;
+  padding: 12px 30px;
+  cursor: pointer;
+  font-size: 20px;
+}
+​
+button.btn-to-down:hover {
+  background-color: RoyalBlue;
+}
+/* END */
+
+
 
