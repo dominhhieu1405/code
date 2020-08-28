@@ -63,11 +63,11 @@ button.btn-to-down {
   padding: 12px 30px;
   cursor: pointer;
   font-size: 20px;
-  text-decoration: none;
 }
-​
 button.btn-to-down:hover {
   background-color: RoyalBlue;
+}
+button.btn-to-down a{
   text-decoration: none;
 }
 /* END */
