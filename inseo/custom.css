@@ -14,12 +14,12 @@
 /*end*/
 
 /* Simple table Css */
-table {
+table.app {
   border-collapse: collapse;
   width: 100%;
 }
 ​
-th, td {
+th.name, td.des {
   text-align: left;
   padding: 8px;
 }
