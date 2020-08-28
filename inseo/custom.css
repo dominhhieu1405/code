@@ -57,7 +57,7 @@ table.tr-caption-container{padding:4px;margin-bottom:.5em}
 
 /* Button "Move to Download button" */
 button.btn-to-down {
-  background-color: DodgerBlue;
+  background-color: LimeGreen;
   border: none;
   color: white;
   padding: 12px 30px;
@@ -65,7 +65,7 @@ button.btn-to-down {
   font-size: 20px;
 }
 button.btn-to-down:hover {
-  background-color: RoyalBlue;
+  background-color: DodgerBlue;
 }
 button.btn-to-down a{
   text-decoration: none;
