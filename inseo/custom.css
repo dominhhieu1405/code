@@ -10,6 +10,7 @@
 .download:hover {background-color:#49DDAA;color:#fff;border-bottom:2px solid #1ABC84;opacity:1;}
 .demo:before {content:&#39;\f135&#39;;display:inline-block;font-weight:normal;vertical-align:top;margin-right:10px;width:16px;height:16px;line-height:24px;font-family:fontawesome;transition:all 0.5s ease-out;}
 .download:before {content:&#39;\f019&#39;;display:inline-block;font-weight:normal;vertical-align:top;margin-right:10px;width:16px;height:16px;line-height:24px;font-family:fontawesome;transition:all 0.5s ease-out;}
+a {text-decoration:none;}
 
 /*end*/
 
