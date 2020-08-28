@@ -1,0 +1,28 @@
+/*Custom Demo & Download Button*/
+
+.btn{list-style:none;text-align:center;margin:10px!important;padding:10px!important;font-size:14px;clear:both;display:inline-block;text-decoration:none!important;color:#FFF!important}
+.btn ul {margin:0;padding:0}
+.btn li{display:inline;margin:5px;padding:0;list-style:none;}
+.demo,.download{padding:12px 15px!important;color:#fff!important;font-weight:700;font-size:14px;font-family:Open Sans,sans-serif;text-align:center;text-transform:uppercase;border-radius:3px;opacity:.95;border:0;letter-spacing:2px;transition:all .2s ease-out}
+.demo {background-color:#3498DB;}
+.download {background-color:#1ABC84;}
+.demo:hover {background-color:#60B8F4;color:#fff;border-bottom:2px solid #3498DB; opacity:1;}
+.download:hover {background-color:#49DDAA;color:#fff;border-bottom:2px solid #1ABC84;opacity:1;}
+.demo:before {content:&#39;\f135&#39;;display:inline-block;font-weight:normal;vertical-align:top;margin-right:10px;width:16px;height:16px;line-height:24px;font-family:fontawesome;transition:all 0.5s ease-out;}
+.download:before {content:&#39;\f019&#39;;display:inline-block;font-weight:normal;vertical-align:top;margin-right:10px;width:16px;height:16px;line-height:24px;font-family:fontawesome;transition:all 0.5s ease-out;}
+
+/*end*/
+
+/* Simple table Css */
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+​
+th, td {
+  text-align: left;
+  padding: 8px;
+}
+​
+tr:nth-child(even) {background-color: #f2f2f2;}
+/* END */
