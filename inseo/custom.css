@@ -28,14 +28,14 @@ tr:nth-child(even) {background-color: #f2f2f2;}
   END */
 
 /* table css*/
-.post-body table td,.post-body table caption{border:1px solid #e9e9e9;padding:5px 10px;text-align:left;vertical-align:top}
-.post-body table th{border:1px solid #e9e9e9;padding:10px;text-align:left;vertical-align:top}
+.post-body table td,.post-body table caption{border:1px solid #e9e9e9;padding:5px 10px;text-align:conter;vertical-align:middle}
+.post-body table th{border:1px solid #e9e9e9;padding:10px;text-align:conter;vertical-align:middle}
 .post-body table.tr-caption-container{border:1px solid #e9e9e9}
 .post-body table caption{border:none;font-style:italic}
-.post-body td,.post-body th{vertical-align:top;text-align:left;padding:3px 5px}
+.post-body td,.post-body th{vertical-align:middle;text-align:center;padding:3px 5px}
 .post-body table tr:nth-child(even) > td{background-color:#f9f9f9}
 .post-body table tr:nth-child(even) > td:hover{background-color:#fbfbfb}
-.post-body th{background:#fff;font-weight:400;text-transform:uppercase}
+.post-body th{background:#fff;font-weight:400;text-transform:uppercase;vertical-align:middle;text-align:center}
 .post-body th:hover{background:#fdfdfd}
 .post-body td a{color:green;padding:0 6px;float:right;display:inline-block;border-radius:3px}
 .post-body td a:hover{color:#7f9bdf;border-color:#adbce0}
@@ -44,7 +44,6 @@ tr:nth-child(even) {background-color: #f2f2f2;}
 .post-body table.tr-caption-container,.post-body table.tr-caption-container img,.post-body img{max-width:100%;height:auto}
 .post-body td.tr-caption{padding:0 8px 8px!important}
 
-.post-body span{vertical-align:middle; text-align:center}
 img{max-width:100%;height:auto;border:none}
 table{max-width:100%;width:100%;margin:1.5em auto}
 table.section-columns td.first.columns-cell{border-left:none}
