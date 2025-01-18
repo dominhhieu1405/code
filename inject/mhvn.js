@@ -184,7 +184,7 @@ function injectedCopy(){
 
     $(document).ready(function () {
         $("head").append(`    <style>
-        .watermark, .watermark-1, .watermark-2, .watermark-3, .watermark-4 {
+        .watermark, .watermark-1, .watermark-2, .watermark-3, .watermark-4, .qr-code-watermark, .watermark2 {
             display: none!important;
             max-width: 0!important;
             max-height: 0!important;
