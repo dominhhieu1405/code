@@ -340,7 +340,8 @@ function injectedCopy(){
                 let promises = [];
 
                 $('.loading img').each(function () {
-                    let dataOriginal = $(this).attr('data-original') || $(this).attr('src');
+                    let dataOriginal = $(this).attr('src') || $(this).attr('data-original');
+                    if (dataOriginal.includes("loading.gif")) dataOriginal = $(this).attr('data-original');
 
                     // Kiểm tra nếu data-original tồn tại và không rỗng
                     if (dataOriginal && dataOriginal.trim() !== '') {
