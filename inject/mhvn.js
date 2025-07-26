@@ -16,6 +16,13 @@ function chunkSubstr(base64String, maxSizeKB) {
 
     return chunks;
 }
+if (typeof window.skey !== 'undefined' && window.skey) {
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.value = window.skey;
+    document.body.appendChild(input);
+}
+
 var images = [];
 function base64toBlob(base64, type) {
     var binStr = atob(base64.split(',')[1]),
