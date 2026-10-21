@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run:   curl -fsSL https://your.host/ubuntu_mirror.sh | sudo bash
+# Run:   curl -fsSL https://raw.githubusercontent.com/dominhhieu1405/code/refs/heads/master/ubuntu_mirror.sh | sudo bash
 set -u
 RUNS=${RUNS:-2}; TIMEOUT=${TIMEOUT:-8}; DRY=${DRY:-0}
 G=$'\e[32m'; Y=$'\e[33m'; R=$'\e[31m'; B=$'\e[1m'; N=$'\e[0m'
