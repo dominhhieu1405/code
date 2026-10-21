@@ -1,11 +1,68 @@
 #!/usr/bin/env bash
-# Run:   curl -fsSL https://raw.githubusercontent.com/dominhhieu1405/code/refs/heads/master/ubuntu_mirror.sh | sudo bash
+# mirror.sh — tự test & chuyển sang mirror nhanh nhất cho apt (Ubuntu), pip, npm
+# Chạy:   curl -fsSL https://raw.githubusercontent.com/dominhhieu1405/code/refs/heads/master/ubuntu_mirror.sh | sudo bash
+# Chỉ test, không sửa:   curl -fsSL https://your.host/mirror.sh | sudo DRY=1 bash
+# Tuỳ chỉnh:
+#   COUNTRIES="VN SG JP"   chỉ test mirror các nước này (mặc định: tất cả)
+#   TOP=10                 số mirror có ping tốt nhất được đem đi test tốc độ
+#   RUNS=2 TIMEOUT=8       số lần test / thời gian tối đa mỗi lần (giây)
+#   EXTRA_APT="http://x/ubuntu/ ..."
 set -u
-RUNS=${RUNS:-2}; TIMEOUT=${TIMEOUT:-8}; DRY=${DRY:-0}
-G=$'\e[32m'; Y=$'\e[33m'; R=$'\e[31m'; B=$'\e[1m'; N=$'\e[0m'
+RUNS=${RUNS:-2}; TIMEOUT=${TIMEOUT:-8}; DRY=${DRY:-0}; TOP=${TOP:-10}; COUNTRIES=${COUNTRIES:-}
+G=$'\e[32m'; Y=$'\e[33m'; R=$'\e[31m'; B=$'\e[1m'; D=$'\e[2m'; N=$'\e[0m'
 
 command -v curl >/dev/null || { echo "${R}Cần curl${N}"; exit 1; }
 [ "$(id -u)" -eq 0 ] || [ "$DRY" = 1 ] || { echo "${R}Chạy bằng root/sudo (hoặc DRY=1 để chỉ test)${N}"; exit 1; }
+TMP=$(mktemp -d); trap 'rm -rf "$TMP"' EXIT
+
+# Top 5 mirror (theo băng thông trên launchpad.net/ubuntu/+archivemirrors) mỗi nước
+APT_MIRRORS="
+VN http://mirror.bizflycloud.vn/ubuntu/
+VN http://mirror.viettelcloud.vn/ubuntu/
+VN https://mirrors.bkns.vn/ubuntu/
+VN https://mirrors.tino.org/ubuntu/
+VN http://opensource.xtdv.net/ubuntu/
+SG http://mirror.sg.gs/ubuntu/
+SG http://mirror.0x.sg/ubuntu/
+SG https://mirror.freedif.org/ubuntu/
+SG https://sg-mirrors.vhost.vn/ubuntu/
+SG http://mirror.soonkeat.sg/ubuntu/
+HK https://mirror.xtom.com.hk/ubuntu/
+HK https://mirror.01link.hk/ubuntu/
+HK http://mirror.as.kamatera.com/ubuntu/
+HK http://ftp.hostrino.com/pub/ubuntu/archive/
+JP https://ftp.udx.icscoe.jp/Linux/ubuntu/
+JP https://linux.yz.yamagata-u.ac.jp/ubuntu/
+JP http://ftp.jaist.ac.jp/pub/Linux/ubuntu/
+JP http://ftp.riken.jp/Linux/ubuntu/
+JP http://ubuntutym.u-toyama.ac.jp/ubuntu/
+KR https://ftp.kaist.ac.kr/ubuntu/
+KR https://mirror.kakao.com/ubuntu/
+KR https://mirror.elice.io/ubuntu/
+KR http://mirror.navercorp.com/ubuntu/
+KR http://kr.archive.ubuntu.com/ubuntu/
+TW https://mirror.twds.com.tw/ubuntu/
+TW http://free.nchc.org.tw/ubuntu/
+TW http://ftp.ubuntu-tw.org/mirror/ubuntu/
+TW http://mirror.ossplanet.net/ubuntu/
+TW http://ftp.tku.edu.tw/ubuntu/
+CN https://mirrors.tuna.tsinghua.edu.cn/ubuntu/
+CN https://mirrors.nju.edu.cn/ubuntu/
+CN https://mirrors.bupt.edu.cn/ubuntu/
+CN http://mirrors.aliyun.com/ubuntu/
+CN https://mirrors.cloud.tencent.com/ubuntu/
+US https://mirror.pilotfiber.com/ubuntu/
+US http://mirror.pit.teraswitch.com/ubuntu/
+US https://mirrors.xtom.com/ubuntu/
+US https://us.mirrors.clouvider.net/ubuntu/
+US https://mirrors.wikimedia.org/ubuntu/
+DE https://ftp.uni-stuttgart.de/ubuntu/
+DE http://ftp.halifax.rwth-aachen.de/ubuntu/
+DE https://mirror.dogado.de/ubuntu/
+DE https://de.mirrors.clouvider.net/ubuntu/
+DE https://mirrors.xtom.de/ubuntu/
+--  http://archive.ubuntu.com/ubuntu/
+"
 
 human() { awk -v b="$1" 'BEGIN{ if (b<=0) {print "FAIL"; exit}
   if (b>=1048576) printf "%.2f MB/s", b/1048576; else printf "%.1f KB/s", b/1024 }'; }
@@ -24,78 +81,92 @@ bench() {
   if [ "$ok" -gt 0 ]; then awk -v t="$total" -v n="$ok" 'BEGIN{printf "%.0f", t/n}'; else echo 0; fi
 }
 
-# pick "Tiêu đề" "base|testurl" ... -> in bảng, set BEST, BEST_SPD
+# pick "Tiêu đề" "label|base|testurl" ...
+#  1) ping song song tất cả (TTFB, 1 byte), loại mirror chết
+#  2) TOP mirror ping tốt nhất -> test tốc độ tuần tự -> bảng -> BEST, BEST_SPD
 pick() {
   local title=$1; shift
-  local res=() e base url s sorted first=1
+  local i=0 e r label base url s sorted first=1 cand res=() total=$#
   echo; echo "${B}== $title ==${N}"
+  rm -f "$TMP"/p.*
   for e in "$@"; do
-    base=${e%%|*}; url=${e#*|}
-    printf '  testing %-60s\r' "$base" >&2
-    s=$(bench "$url")
-    res+=("$s|$base")
+    url=${e##*|}
+    ( r=$(curl -sL -o /dev/null -r 0-0 --connect-timeout 3 --max-time 5 \
+        -w '%{http_code} %{time_starttransfer}' "$url" 2>/dev/null)
+      case ${r%% *} in 200 | 206) echo "${r#* }|$e" >"$TMP/p.$i" ;; esac ) &
+    i=$((i + 1))
   done
-  printf '%80s\r' '' >&2
+  wait
+  cand=$(cat "$TMP"/p.* 2>/dev/null | sort -t'|' -k1,1n | head -n "$TOP")
+  if [ -z "$cand" ]; then echo "  ${R}không mirror nào phản hồi${N}"; BEST=""; BEST_SPD=0; return; fi
+  echo "  ${D}ping $total mirror, $(cat "$TMP"/p.* | wc -l) sống, test tốc độ $(wc -l <<<"$cand") cái nhanh nhất${N}"
+
+  while IFS='|' read -r _ label base url; do
+    printf '\r\e[K  testing %s' "$label" >&2
+    s=$(bench "$url")
+    res+=("$s|$label|$base")
+  done <<<"$cand"
+  printf '\r\e[K' >&2
+
   sorted=$(printf '%s\n' "${res[@]}" | sort -t'|' -k1,1nr)
-  printf '| %-52s | %12s |\n' "Mirror" "Speed Avg"
-  printf '|%s|%s|\n' "$(printf -- '-%.0s' {1..54})" "$(printf -- '-%.0s' {1..14})"
-  while IFS='|' read -r s base; do
+  printf '| %-58s | %12s |\n' "Mirror" "Speed Avg"
+  printf '|%s|%s|\n' "$(printf -- '-%.0s' {1..60})" "$(printf -- '-%.0s' {1..14})"
+  while IFS='|' read -r s label base; do
     if [ "$first" = 1 ] && [ "$s" != 0 ]; then
-      printf "| ${G}%-52s${N} | ${G}%12s${N} |\n" "★ $base" "$(human "$s")"
+      printf "| ${G}%-60s${N} | ${G}%12s${N} |\n" "★ $label" "$(human "$s")" # ★ = 3 byte, 1 cột
     else
-      printf '| %-52s | %12s |\n' "$base" "$(human "$s")"
+      printf '| %-58s | %12s |\n' "$label" "$(human "$s")"
     fi
     first=0
   done <<<"$sorted"
-  BEST=$(head -1 <<<"$sorted"); BEST_SPD=${BEST%%|*}; BEST=${BEST#*|}
+  r=$(head -1 <<<"$sorted"); BEST_SPD=${r%%|*}; BEST=${r##*|}
 }
 
-backup() { [ -f "$1" ] && cp -a "$1" "$1.bak.$(date +%s)"; }
+# backup ra ngoài sources.list.d (apt sẽ kêu nếu để .bak trong đó)
+BK=/var/backups/mirror-sh
+backup() { [ -f "$1" ] && mkdir -p "$BK" && cp -a "$1" "$BK/$(basename "$1").$(date +%s)"; }
+# dọn backup cũ do bản trước để nhầm chỗ
+if [ "$DRY" != 1 ] && ls /etc/apt/sources.list.d/*.bak.* >/dev/null 2>&1; then
+  mkdir -p "$BK" && mv /etc/apt/sources.list.d/*.bak.* "$BK"/
+fi
 SUMMARY=()
 
 # ================= APT (Ubuntu) =================
 if [ -r /etc/os-release ] && . /etc/os-release && [ "${ID:-}" = ubuntu ]; then
   CODENAME=${VERSION_CODENAME:-${UBUNTU_CODENAME:-}}
   ARCH=$(dpkg --print-architecture)
-  case $ARCH in amd64 | i386) SUF=ubuntu ;; *) SUF=ubuntu-ports ;; esac
+  case $ARCH in amd64 | i386) PORTS=0 ;; *) PORTS=1 ;; esac
 
   FILES=()
   [ -f /etc/apt/sources.list.d/ubuntu.sources ] && FILES+=(/etc/apt/sources.list.d/ubuntu.sources)
   [ -f /etc/apt/sources.list ] && grep -qE '^deb ' /etc/apt/sources.list && FILES+=(/etc/apt/sources.list)
 
-  CUR=""
-  [ ${#FILES[@]} -gt 0 ] && CUR=$(grep -hE '^(URIs:|deb )' "${FILES[@]}" | grep -v security.ubuntu.com |
-    grep -oE 'https?://[^ ]+/ubuntu(-ports)?/?' | head -1)
-  [ -n "$CUR" ] && CUR="${CUR%/}/"
+  # mọi URI mirror đang dùng (trừ security), không giả định path phải là /ubuntu
+  # vd Vultr dùng http://ubuntu.mirror.constant.com
+  CURS=""
+  [ ${#FILES[@]} -gt 0 ] && CURS=$(grep -hE '^(URIs:|deb(-src)? )' "${FILES[@]}" |
+    grep -oE 'https?://[^ ]+' | grep -v security.ubuntu.com | awk '!s[$0]++')
+  CUR=$(head -1 <<<"$CURS"); [ -n "$CUR" ] && CUR="${CUR%/}/"
 
-  LIST="$CUR
-http://archive.ubuntu.com/ubuntu/
-http://vn.archive.ubuntu.com/ubuntu/
-http://sg.archive.ubuntu.com/ubuntu/
-http://mirror.bizflycloud.vn/ubuntu/
-http://opensource.xtdv.net/ubuntu/
-http://mirror.viettelcloud.vn/ubuntu/
-http://mirrors.nhanhoa.com/ubuntu/
-http://mirror.kakao.com/ubuntu/
-http://ftp.jaist.ac.jp/pub/Linux/ubuntu/
-http://mirrors.tuna.tsinghua.edu.cn/ubuntu/
-${EXTRA_APT:-}"
-  # mirror gợi ý theo vị trí từ Canonical
-  [ "$SUF" = ubuntu ] && LIST="$LIST
-$(curl -s --max-time 5 http://mirrors.ubuntu.com/mirrors.txt | head -8)"
+  LIST=$(grep -E '^[A-Z-]{2} ' <<<"$APT_MIRRORS")
+  if [ -n "$COUNTRIES" ]; then
+    LIST=$(grep -E "^($(tr ' ,' '||' <<<"$COUNTRIES" | sed 's/|*$//')|--) " <<<"$LIST")
+  fi
+  [ -n "$CUR" ] && LIST="cur $CUR
+$LIST"
+  for x in ${EXTRA_APT:-}; do LIST="$LIST
+++ $x"; done
 
-  if [ "$SUF" = ubuntu-ports ]; then
-    LIST=$(sed -E 's#archive\.ubuntu\.com/ubuntu/?#ports.ubuntu.com/ubuntu-ports/#; s#/ubuntu/?$#/ubuntu-ports/#' <<<"$LIST")
-    LIST="$LIST
-http://ports.ubuntu.com/ubuntu-ports/"
+  if [ "$PORTS" = 1 ]; then
+    LIST=$(sed -E 's#archive\.ubuntu\.com/ubuntu/?#ports.ubuntu.com/ubuntu-ports/#; s#/ubuntu/$#/ubuntu-ports/#' <<<"$LIST")
   fi
 
   ARGS=()
-  while read -r m; do
-    [ -z "$m" ] && continue
+  while read -r cc m; do
+    [ -z "${m:-}" ] && continue
     m="${m%/}/"
-    ARGS+=("$m|${m}dists/$CODENAME/main/binary-$ARCH/Packages.gz")
-  done < <(tr ' ' '\n' <<<"$LIST" | grep -E '^https?://' | sed 's#/*$#/#' | awk '!s[$0]++')
+    ARGS+=("[$cc] $m|$m|${m}dists/$CODENAME/main/binary-$ARCH/Packages.gz")
+  done < <(awk '!s[$2]++' <<<"$LIST")
 
   pick "APT Ubuntu $CODENAME ($ARCH) — hiện tại: ${CUR:-?}" "${ARGS[@]}"
 
@@ -110,13 +181,23 @@ http://ports.ubuntu.com/ubuntu-ports/"
   else
     for f in "${FILES[@]}"; do
       backup "$f"
-      sed -E -i "/security\.ubuntu\.com/! { /^(URIs:|deb(-src)? )/ s#https?://[^ ]+/ubuntu(-ports)?/?#$BEST# }" "$f"
+      c=$(<"$f")
+      while read -r u; do
+        [ -z "$u" ] && continue
+        # giữ kiểu dấu / cuối như bản gốc
+        if [ "${u%/}" = "$u" ]; then c=${c//"$u"/${BEST%/}}; else c=${c//"$u"/$BEST}; fi
+      done <<<"$CURS"
+      printf '%s\n' "$c" >"$f"
     done
+    if ! grep -qF "${BEST%/}" "${FILES[@]}"; then
+      SUMMARY+=("${R}APT: không thay được URI trong ${FILES[*]}${N}")
+    else
     echo "  apt-get update..."
     if apt-get update -qq; then
-      SUMMARY+=("${G}APT: đã đổi sang $BEST${N} (backup *.bak.*)")
+      SUMMARY+=("${G}APT: đã đổi sang $BEST${N} (backup: $BK)")
     else
-      SUMMARY+=("${R}APT: đổi sang $BEST nhưng apt update lỗi — khôi phục từ *.bak.*${N}")
+      SUMMARY+=("${R}APT: đổi sang $BEST nhưng apt update lỗi — khôi phục từ $BK${N}")
+    fi
     fi
   fi
 else
@@ -131,7 +212,7 @@ if command -v pip3 >/dev/null || command -v pip >/dev/null || python3 -m pip --v
     https://pypi.tuna.tsinghua.edu.cn/simple/ \
     https://mirrors.cloud.tencent.com/pypi/simple/ \
     https://mirrors.ustc.edu.cn/pypi/simple/; do
-    P+=("$m|${m}numpy/")
+    P+=("$m|$m|${m}numpy/")
   done
   pick "PIP" "${P[@]}"
   if [ "$BEST_SPD" = 0 ]; then
@@ -154,7 +235,7 @@ if command -v npm >/dev/null; then
   for m in https://registry.npmjs.org/ \
     https://registry.npmmirror.com/ \
     https://mirrors.cloud.tencent.com/npm/; do
-    P+=("$m|${m}typescript")
+    P+=("$m|$m|${m}typescript")
   done
   pick "NPM" "${P[@]}"
   if [ "$BEST_SPD" = 0 ]; then
